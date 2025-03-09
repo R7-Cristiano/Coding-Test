@@ -8,7 +8,8 @@ class Solution {
             int day = startday;
             int successCount = 0;
 
-            for (int t : timelog) {
+            for (int j=0;  j<timelog.length; j++) {
+                int t = timelog[j];
                 // 요일 변환: 0 -> 일요일, 6 -> 토요일
                 int currentDay = day % 7;
                 if (currentDay == 0) currentDay = 7;
