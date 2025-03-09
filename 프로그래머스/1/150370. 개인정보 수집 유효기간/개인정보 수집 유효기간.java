@@ -1,83 +1,67 @@
 import java.util.*;
-
 class Solution {
     public int[] solution(String today, String[] terms, String[] privacies) {
-        // 오늘 날짜 파싱
+        // 개인 정보 n개
+        // 각 약관마다 유효기간 존재, 지나면 파기
+        // A 유효기간 12달 2021년 1월5일 수집된 개인정보 2022년 1월4일까지 보관 가능, 이후 파기
+        // 오늘 날짜로 파기해야할 개인정보 번호를 구하라
+        // 오늘 날짜 today
+        // 약관의 유효기간을 담은 1차원 배열 terms 약관종류 유효기간 split(" ");
+        // privacies[i] 는 i+1번 개인정보의 수집일자와 약관 종류 날짜와 약관종류 공백 split(" ");
+        // 수집된 개인정보의 정보
+        // 파기해야할 개인정보의 번호를 오름차순으로 정수배열에 담아 리턴
+        //모든 달은 28일까지 있다고 가정
         String[] todayArr = today.split("\\.");
-        int year = Integer.parseInt(todayArr[0]);
-        int month = Integer.parseInt(todayArr[1]);
-        int date = Integer.parseInt(todayArr[2]);
-
-        // 약관 종류와 유효기간 저장 (Map 사용)
-        Map<String, Integer> termMap = new HashMap<>();
-        for (int i = 0; i < terms.length; i++) {
-            String[] t = terms[i].split(" ");
-            termMap.put(t[0], Integer.parseInt(t[1]));
-        }
-
+        int year = Integer.parseInt(today.split(".")[0]); //오늘 년도
+        int month = Integer.parseInt(today.split(".")[1]); //오늘 달수 3월
+        int date = Integer.parseInt(today.split(".")[2]); //오늘 일수 1일까지
         List<Integer> result = new ArrayList<>();
 
-        // 개인정보 확인 로직
-        for (int i = 0; i < privacies.length; i++) {
-            String[] privacy = privacies[i].split(" ");
-            String collectedDate = privacy[0];
-            String type = privacy[1];
+        for(int i =0; i< terms.length; i++){
+            String term = terms[i].split(" ")[0]; // 약관 종류 A B C
+            int validMonth = Integer.parseInt(terms[i].split(" ")[1]); //해야될 달 1 2 3달
+            //만료 날짜를 구하는 로직이 있어야함
+            for(int j =0; j< privacies.length; j++){
+                String[] privacy = privacies[j].split(" ");
+                String waha = privacy[0];
+                String type = privacy[1];
 
-            // 약관 조회 → Map에서 직접 가져오기
-            int validMonth = termMap.get(type);
-
-            // 만료 날짜 계산
-            String expiryDate = calcDate(collectedDate, validMonth);
-
-            // 만료 날짜가 오늘보다 이전이면 파기 대상
-            if (isExpired(expiryDate, year, month, date)) {
-                result.add(i + 1); // 인덱스는 1부터 시작하므로 i + 1
+                if(term.equals(type)){
+                    String expiryDate=CalcDate(waha, validMonth); // 2월 29일
+                    if (isExpired(expiryDate, year, month, date)) {
+                        result.add(i + 1);
+                    }
+                }
             }
         }
-
         // 결과 오름차순 정렬 및 배열 변환
         return result.stream().mapToInt(Integer::intValue).toArray();
     }
-
-    // ✅ 만료일 계산 함수 수정 완료
-    private String calcDate(String validDate, int validMonth) {
+    //만료날짜 구하는 로직
+    private String CalcDate(String validDate, int validMonth){ //유효기간 1달 부터 100달 -> 100 (8년) 96달
         String[] dateArr = validDate.split("\\.");
         int year = Integer.parseInt(dateArr[0]);
         int month = Integer.parseInt(dateArr[1]);
         int day = Integer.parseInt(dateArr[2]);
-
-        // 유효기간 추가
-        month += validMonth;
-
-        // 12월 초과 시 연도 처리
-        if (month > 12) {
-            year += (month - 1) / 12;
-            month = (month - 1) % 12 + 1;
+        //13달
+        if(validMonth+month > 12) { //유효기간 + 약관달수가 12가 넘어가면
+            year += (validMonth + month / 12);
+            month += (validMonth + month % 12);
+            day = day - 1;
+        }else if(validMonth + month <= 12){ //유효기간 + 약관 달수가 12가 안넘는다
+            month = month + validMonth;
+            day = day -1;
         }
-
-        // 만료일 하루 전 설정
-        day -= 1;
-        if (day == 0) {
-            month -= 1;
-            if (month == 0) {
-                month = 12;
-                year -= 1;
-            }
-            day = 28; // 모든 달은 28일까지 있다고 가정
-        }
-
-        // YYYY.MM.DD 형식으로 리턴
         return String.format("%04d.%02d.%02d", year, month, day);
     }
-
-    // ✅ 만료일과 오늘 날짜 비교 함수 수정 완료
+    // ✅ 만료일과 오늘 날짜 비교 함수
     private boolean isExpired(String expiryDate, int todayYear, int todayMonth, int todayDay) {
         String[] expiryArr = expiryDate.split("\\.");
         int expiryYear = Integer.parseInt(expiryArr[0]);
         int expiryMonth = Integer.parseInt(expiryArr[1]);
         int expiryDay = Integer.parseInt(expiryArr[2]);
 
-        // 만료일이 오늘보다 이전이면 true 반환
+        // 만료일이 오늘 날짜보다 이전이면 true
         if (expiryYear < todayYear) return true;
         if (expiryYear == todayYear && expiryMonth < todayMonth) return true;
         if (expiryYear == todayYear && expiryMonth == todayMonth && expiryDay < todayDay) return true;
